@@ -122,6 +122,43 @@ class Point {
 	}
 }
 
+function findSpan(n, k, t, knot_vector)
+{
+	if (t == knot_vector[n + 1])
+		return n; /* Special case */
+	/* Do binary search */
+	low = k;
+	high = n + 1;
+	mid = (low + high) / 2;
+	while ((t < knot_vector[mid]) || (t >= knot_vector[mid + 1]))
+	{
+		if (t < knot_vector[mid])
+			high = mid;
+		else
+			low = mid;
+		mid = (low + high) / 2;
+	}
+	return mid;
+}
+
+function basisFunc(i,t,k,knot_vector,N)
+{
+	N[0] = 1.0;
+	for (j = 1; j <= k; j++)
+	{
+		left[j] = t - knot_vector[i + 1 - j];
+		right[j] = knot_vector[i + j] - t;
+		saved = 0.0;
+		for (r = 0; r < j; r++)
+		{
+			temp = N[r]/(right[r+1]+left[j-r]);
+			N[r] = saved + right[r+1]*temp;
+			saved = left[j-r]*temp;
+		}
+		N[j] = saved;
+	}
+}
+
 const Data = {
 	pointsCtr: [],
 	pointsSpline: [],
