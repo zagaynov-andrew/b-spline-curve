@@ -141,7 +141,7 @@ function findSpan(n, k, t, knot_vector)
 	return mid;
 }
 
-function basisFunc(i,t,k,knot_vector,N)
+function basisFunc(i, t, k, knot_vector, N)
 {
 	N[0] = 1.0;
 	for (j = 1; j <= k; j++)
