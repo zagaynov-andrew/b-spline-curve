@@ -124,32 +124,35 @@ class Point {
 
 function findSpan(n, k, t, knot_vector)
 {
-	if (t == knot_vector[n + 1])
+	if (Math.round(t * 1000000) == Math.round(knot_vector[n + 1] * 1000000))
 		return n; /* Special case */
 	/* Do binary search */
-	low = k;
-	high = n + 1;
-	mid = (low + high) / 2;
+	let low = k;
+	let high = n + 1;
+	let mid = Math.floor((low + high) / 2);
 	while ((t < knot_vector[mid]) || (t >= knot_vector[mid + 1]))
 	{
 		if (t < knot_vector[mid])
 			high = mid;
 		else
 			low = mid;
-		mid = (low + high) / 2;
+		mid = Math.floor((low + high) / 2);
 	}
 	return mid;
 }
 
-function basisFunc(i, t, k, knot_vector, N)
+function N_func(i, t, k, knot_vector, N)
 {
+	let left = new Array(k + 1);
+	let right = new Array(k + 1);
+	let saved, temp;
 	N[0] = 1.0;
-	for (j = 1; j <= k; j++)
+	for (let j = 1; j <= k; j++)
 	{
 		left[j] = t - knot_vector[i + 1 - j];
 		right[j] = knot_vector[i + j] - t;
 		saved = 0.0;
-		for (r = 0; r < j; r++)
+		for (let r = 0; r < j; r++)
 		{
 			temp = N[r] / (right[r + 1] + left[j - r]);
 			N[r] = saved + right[r + 1] * temp;
@@ -157,7 +160,60 @@ function basisFunc(i, t, k, knot_vector, N)
 		}
 		N[j] = saved;
 	}
+	return (N);
 }
+function basisFunc(i, t, k, knot_vector, N)
+{
+	if (knot_vector[i] <= t && t < knot_vector[i + 1])
+		N[1] = 1;
+	else
+		N[1] = 0;
+	if (knot_vector[i + 1] <= t && t < knot_vector[i + 2])
+		N[0] = 1;
+	else
+		N[0] = 0;
+	return (N);
+}
+
+// function N_func(i, t, k, knot_vector)
+// {
+// 	let r;
+// 	if (k == 1)
+// 	{
+// 		let N = new Array(2);
+// 		N = [0, 0];
+// 		N = basisFunc(i, t, k - 1, knot_vector, N);
+// 		let left, right;
+// 		if (N[1] == 0)
+// 			left = 0;
+// 		else
+// 			left = (t - knot_vector[i]) / (knot_vector[i + k] - knot_vector[i]) * N[1];
+
+// 		if (N[0] == 0)
+// 			right = 0;
+// 		else
+// 			right = (knot_vector[i + k + 1] - t) / (knot_vector[i + k + 1] - knot_vector[i + 1]) * N[0];
+// 		r = left + right;
+// 	}
+// 	else
+// 	{
+// 		let N_left, N_right;
+// 		let left, right;
+// 		N_left = N_func(i, t, k - 1, knot_vector);
+// 		N_right = N_func(i + 1, t, k - 1, knot_vector);
+// 		if (N_left == 0)
+// 			left = 0;
+// 		else
+// 			left = (t - knot_vector[i]) / (knot_vector[i + k] - knot_vector[i]) * N_left;
+		
+// 		if (N_right == 0)
+// 			right = 0;
+// 		else
+// 			right = (knot_vector[i + k + 1] - t) / (knot_vector[i + k + 1] - knot_vector[i + 1]) * N_right;
+// 		r = left + right;
+// 	}
+// 	return (r);
+// }
 
 const Data = {
 	pointsCtr: [],
@@ -391,10 +447,12 @@ const Data = {
 		this.setVertexBuffersAndDraw();
 	},
 	calculateLineSpline: function () {
-		let i, j;
+		let i, j, i_p;
 		let pt;
-		let t, x, y, dt, omega;
+		let t, dt;
 		let d = 0;
+		let k = 3;
+		let t_max = 5;
 		
 		// calculating the total chord length
 		for (i = 1; i < this.pointsCtr.length; i++)
@@ -410,7 +468,7 @@ const Data = {
 		for (i = 1; i < this.pointsCtr.length; ++i)
 		{
 			if (this.uniform.checked)
-				this.pointsCtr[i].t = i / (this.pointsCtr.length - 1);
+				this.pointsCtr[i].t = t_max * i / (this.pointsCtr.length - 1);
 			if (this.chordal.checked)
 				this.pointsCtr[i].t = this.pointsCtr[i - 1].t + 
 								Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x,
@@ -424,22 +482,50 @@ const Data = {
 		const N = this.countSplinePoints.value;
 		this.pointsSpline = new Array(N);
 
+
+		let knot_vector = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5];
+		// let knot_vector = [0, 0, 1, 2, 3, 4, 5, 6, 7, 7];
+		// let knot_vector = new Array(this.pointsCtr.length + k + 1);
+
+		// dt = (this.pointsCtr[this.pointsCtr.length - 1].t - this.pointsCtr[0].t) / (N - 1);
+		// knot_vector[0] = this.pointsCtr[0].t;
+		// for (i = 1; i < knot_vector.length; i++)
+			// knot_vector[i] = knot_vector[i - 1] + dt;
+
+		// let arr = new Array(k + 1);
+		// i = findSpan(this.pointsCtr.length, k, 6., knot_vector);
+		// N_func(i, 6., k, knot_vector, arr);
+		// console.log(arr);
+
 		// calculating the values of a parametric function in points
 		if (this.pointsCtr.length > 1)
 		{
-			dt = (this.pointsCtr[this.pointsCtr.length - 1].t - this.pointsCtr[0].t) / (N - 1);
+			dt = (t_max - this.pointsCtr[0].t) / (N - 1);
 			t = this.pointsCtr[0].t;
-			i = 0;
+			i_p = 0;
 			for (j = 0; j < N; j++)
 			{
-				omega = (t - this.pointsCtr[i].t) / (this.pointsCtr[i + 1].t - this.pointsCtr[i].t);
-				x = this.pointsCtr[i].x * (1 - omega) + this.pointsCtr[i + 1].x * omega;
-				y = this.pointsCtr[i].y * (1 - omega) + this.pointsCtr[i + 1].y * omega;
+				let x = 0, y = 0;
+				let basis_func = new Array(k + 1);
+				i = findSpan(this.pointsCtr.length, k, t, knot_vector);
+				N_func(i, t, k, knot_vector, basis_func);
+			
+				for (let l = 0; l < k + 1; l++)
+				{
+					if (i - k + l < this.pointsCtr.length)
+					{
+						x += basis_func[l] * this.pointsCtr[i - k + l].x;
+						y += basis_func[l] * this.pointsCtr[i - k + l].y;
+					}
+				}
+				// i = findSpan(this.pointsCtr.length, k, t, knot_vector);
+				// x += N_func(i, t, k, knot_vector) * this.pointsCtr[i_p].x;
+				// y += N_func(i, t, k, knot_vector) * this.pointsCtr[i_p].y;
 				pt = new Point(x, y);
 				this.pointsSpline.push(pt);
 				t += dt;
-				while (i + 1 != this.pointsCtr.length - 1 && t > this.pointsCtr[i + 1].t)
-					i++;
+				while (i_p + 1 != this.pointsCtr.length - 1 && t > this.pointsCtr[i_p + 1].t)
+					i_p++;
 			}
 		}
 
