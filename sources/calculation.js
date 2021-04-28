@@ -151,9 +151,9 @@ function basisFunc(i,t,k,knot_vector,N)
 		saved = 0.0;
 		for (r = 0; r < j; r++)
 		{
-			temp = N[r]/(right[r+1]+left[j-r]);
-			N[r] = saved + right[r+1]*temp;
-			saved = left[j-r]*temp;
+			temp = N[r] / (right[r + 1] + left[j - r]);
+			N[r] = saved + right[r + 1] * temp;
+			saved = left[j - r] * temp;
 		}
 		N[j] = saved;
 	}
