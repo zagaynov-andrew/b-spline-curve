@@ -58,11 +58,12 @@ function main() {
 	gl.uniformMatrix4fv(u_projMatrix, false, projMatrix);
 
 	const countSplinePoints = document.getElementById("countSplinePoints");
+	const splineOrder = document.getElementById("splineOrder");
 	const uniform = document.getElementById("uniform");
 	const chordal = document.getElementById("chordal");
 	const centripetal = document.getElementById("centripetal");
 
-	Data.init(gl, countSplinePoints, uniform, chordal, centripetal);
+	Data.init(gl, countSplinePoints, splineOrder, uniform, chordal, centripetal);
 
 	// Register function (event handler) to be called on a mouse press
 	canvas.onclick = function (ev) { click(ev, canvas); };
@@ -81,6 +82,7 @@ function main() {
 
 	lineSpline.onclick = function () { Data.plotMode(1); };
 	countSplinePoints.onchange = function () { Data.plotMode(2); };
+	splineOrder.onchange = function () { Data.plotMode(2); };
 	uniform.onclick = function () { Data.plotMode(2); };
 	chordal.onclick = function () { Data.plotMode(2); };
 	centripetal.onclick = function () { Data.plotMode(2); };
@@ -143,6 +145,13 @@ function findSpan(n, k, t, knot_vector)
 
 function N_func(i, t, k, knot_vector, N)
 {
+	if (Math.round(t * 1000000) == knot_vector[knot_vector.length - 1] * 1000000)
+	{
+		for (let l = 0; l < N.length; ++l)
+		N[l] = 0;
+		N[N.length - 2] = 1;
+		return (N);
+	}
 	let left = new Array(k + 1);
 	let right = new Array(k + 1);
 	let saved, temp;
@@ -162,58 +171,6 @@ function N_func(i, t, k, knot_vector, N)
 	}
 	return (N);
 }
-function basisFunc(i, t, k, knot_vector, N)
-{
-	if (knot_vector[i] <= t && t < knot_vector[i + 1])
-		N[1] = 1;
-	else
-		N[1] = 0;
-	if (knot_vector[i + 1] <= t && t < knot_vector[i + 2])
-		N[0] = 1;
-	else
-		N[0] = 0;
-	return (N);
-}
-
-// function N_func(i, t, k, knot_vector)
-// {
-// 	let r;
-// 	if (k == 1)
-// 	{
-// 		let N = new Array(2);
-// 		N = [0, 0];
-// 		N = basisFunc(i, t, k - 1, knot_vector, N);
-// 		let left, right;
-// 		if (N[1] == 0)
-// 			left = 0;
-// 		else
-// 			left = (t - knot_vector[i]) / (knot_vector[i + k] - knot_vector[i]) * N[1];
-
-// 		if (N[0] == 0)
-// 			right = 0;
-// 		else
-// 			right = (knot_vector[i + k + 1] - t) / (knot_vector[i + k + 1] - knot_vector[i + 1]) * N[0];
-// 		r = left + right;
-// 	}
-// 	else
-// 	{
-// 		let N_left, N_right;
-// 		let left, right;
-// 		N_left = N_func(i, t, k - 1, knot_vector);
-// 		N_right = N_func(i + 1, t, k - 1, knot_vector);
-// 		if (N_left == 0)
-// 			left = 0;
-// 		else
-// 			left = (t - knot_vector[i]) / (knot_vector[i + k] - knot_vector[i]) * N_left;
-		
-// 		if (N_right == 0)
-// 			right = 0;
-// 		else
-// 			right = (knot_vector[i + k + 1] - t) / (knot_vector[i + k + 1] - knot_vector[i + 1]) * N_right;
-// 		r = left + right;
-// 	}
-// 	return (r);
-// }
 
 const Data = {
 	pointsCtr: [],
@@ -239,10 +196,11 @@ const Data = {
 	visualizeSplineWithPoints: true,
 	visualizeSplineWithLine: false,
 	countSplinePoints: null,
+	splineOrder: null,
 	uniform: null,
 	chordal: null,
 	centripetal: null,
-	init: function (gl, countSplinePoints, uniform, chordal, centripetal) {
+	init: function (gl, countSplinePoints, splineOrder, uniform, chordal, centripetal) {
 		this.gl = gl;
 		// Create a buffer object
 		this.vertexBufferCtr = this.gl.createBuffer();
@@ -290,6 +248,7 @@ const Data = {
 		}
 
 		this.countSplinePoints = countSplinePoints;
+		this.splineOrder = splineOrder;
 		this.uniform = uniform;
 		this.chordal = chordal;
 		this.centripetal = centripetal;
@@ -447,12 +406,21 @@ const Data = {
 		this.setVertexBuffersAndDraw();
 	},
 	calculateLineSpline: function () {
-		let i, j, i_p;
+		let i, j;
 		let pt;
 		let t, dt;
 		let d = 0;
-		let k = 3;
-		let t_max = 5;
+		const k = Number(this.splineOrder.value);
+
+		// calculating the knot vector
+		let knot_vector = new Array(this.pointsCtr.length + k + 1);
+		for (i = 0; i < k + 1; ++i)
+			knot_vector[i] = 0;
+		for (i = k + 1; i < this.pointsCtr.length; ++i)
+			knot_vector[i] = knot_vector[i - 1] + 1;
+		for (i = this.pointsCtr.length; i < knot_vector.length; ++i)
+			knot_vector[i] = knot_vector[this.pointsCtr.length - 1] + 1;
+		let t_max = knot_vector[knot_vector.length - 1];
 		
 		// calculating the total chord length
 		for (i = 1; i < this.pointsCtr.length; i++)
@@ -479,37 +447,21 @@ const Data = {
 									this.pointsCtr[i].y - this.pointsCtr[i - 1].y)) / d;
 		}
 
+
 		const N = this.countSplinePoints.value;
 		this.pointsSpline = new Array(N);
-
-
-		let knot_vector = [0, 0, 0, 0, 1, 2, 3, 4, 5, 5, 5, 5];
-		// let knot_vector = [0, 0, 1, 2, 3, 4, 5, 6, 7, 7];
-		// let knot_vector = new Array(this.pointsCtr.length + k + 1);
-
-		// dt = (this.pointsCtr[this.pointsCtr.length - 1].t - this.pointsCtr[0].t) / (N - 1);
-		// knot_vector[0] = this.pointsCtr[0].t;
-		// for (i = 1; i < knot_vector.length; i++)
-			// knot_vector[i] = knot_vector[i - 1] + dt;
-
-		// let arr = new Array(k + 1);
-		// i = findSpan(this.pointsCtr.length, k, 6., knot_vector);
-		// N_func(i, 6., k, knot_vector, arr);
-		// console.log(arr);
 
 		// calculating the values of a parametric function in points
 		if (this.pointsCtr.length > 1)
 		{
 			dt = (t_max - this.pointsCtr[0].t) / (N - 1);
 			t = this.pointsCtr[0].t;
-			i_p = 0;
 			for (j = 0; j < N; j++)
 			{
 				let x = 0, y = 0;
 				let basis_func = new Array(k + 1);
 				i = findSpan(this.pointsCtr.length, k, t, knot_vector);
-				N_func(i, t, k, knot_vector, basis_func);
-			
+				N_func(i, t, k, knot_vector, basis_func);		
 				for (let l = 0; l < k + 1; l++)
 				{
 					if (i - k + l < this.pointsCtr.length)
@@ -518,14 +470,9 @@ const Data = {
 						y += basis_func[l] * this.pointsCtr[i - k + l].y;
 					}
 				}
-				// i = findSpan(this.pointsCtr.length, k, t, knot_vector);
-				// x += N_func(i, t, k, knot_vector) * this.pointsCtr[i_p].x;
-				// y += N_func(i, t, k, knot_vector) * this.pointsCtr[i_p].y;
 				pt = new Point(x, y);
 				this.pointsSpline.push(pt);
 				t += dt;
-				while (i_p + 1 != this.pointsCtr.length - 1 && t > this.pointsCtr[i_p + 1].t)
-					i_p++;
 			}
 		}
 
