@@ -143,7 +143,7 @@ function findSpan(n, k, t, knot_vector)
 	return mid;
 }
 
-function N_func(i, t, k, knot_vector, N)
+function basisFuncs(i, t, k, knot_vector, N)
 {
 	if (Math.round(t * 1000000) == knot_vector[knot_vector.length - 1] * 1000000)
 	{
@@ -412,6 +412,9 @@ const Data = {
 		let d = 0;
 		const k = Number(this.splineOrder.value);
 
+		if (k >= this.pointsCtr.length)
+			return ;
+
 		// calculating the knot vector
 		let knot_vector = new Array(this.pointsCtr.length + k + 1);
 		for (i = 0; i < k + 1; ++i)
@@ -421,32 +424,6 @@ const Data = {
 		for (i = this.pointsCtr.length; i < knot_vector.length; ++i)
 			knot_vector[i] = knot_vector[this.pointsCtr.length - 1] + 1;
 		let t_max = knot_vector[knot_vector.length - 1];
-		
-		// calculating the total chord length
-		for (i = 1; i < this.pointsCtr.length; i++)
-		{
-			if (this.chordal.checked)
-				d += Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x,
-								this.pointsCtr[i].y - this.pointsCtr[i - 1].y);
-			if (this.centripetal.checked)
-				d += Math.sqrt(Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x,
-									this.pointsCtr[i].y - this.pointsCtr[i - 1].y));
-		}
-		// calculation of the parameter t for each point of the spline
-		for (i = 1; i < this.pointsCtr.length; ++i)
-		{
-			if (this.uniform.checked)
-				this.pointsCtr[i].t = t_max * i / (this.pointsCtr.length - 1);
-			if (this.chordal.checked)
-				this.pointsCtr[i].t = this.pointsCtr[i - 1].t + 
-								Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x,
-									this.pointsCtr[i].y - this.pointsCtr[i - 1].y) / d;
-			if (this.centripetal.checked)
-				this.pointsCtr[i].t = this.pointsCtr[i - 1].t + 
-								Math.sqrt(Math.hypot(this.pointsCtr[i].x - this.pointsCtr[i - 1].x,
-									this.pointsCtr[i].y - this.pointsCtr[i - 1].y)) / d;
-		}
-
 
 		const N = this.countSplinePoints.value;
 		this.pointsSpline = new Array(N);
@@ -461,7 +438,7 @@ const Data = {
 				let x = 0, y = 0;
 				let basis_func = new Array(k + 1);
 				i = findSpan(this.pointsCtr.length, k, t, knot_vector);
-				N_func(i, t, k, knot_vector, basis_func);		
+				basisFuncs(i, t, k, knot_vector, basis_func);		
 				for (let l = 0; l < k + 1; l++)
 				{
 					if (i - k + l < this.pointsCtr.length)
