@@ -145,13 +145,6 @@ function findSpan(n, k, t, knot_vector)
 
 function basisFuncs(i, t, k, knot_vector, N)
 {
-	if (Math.round(t * 1000000) == knot_vector[knot_vector.length - 1] * 1000000)
-	{
-		for (let l = 0; l < N.length; ++l)
-		N[l] = 0;
-		N[N.length - 2] = 1;
-		return (N);
-	}
 	let left = new Array(k + 1);
 	let right = new Array(k + 1);
 	let saved, temp;
@@ -406,26 +399,26 @@ const Data = {
 		this.setVertexBuffersAndDraw();
 	},
 	calculateLineSpline: function () {
-		let i, j;
+		let span, i, j;
 		let pt;
 		let t, dt;
 		let d = 0;
-		const k = Number(this.splineOrder.value);
+		const p = Number(this.splineOrder.value);
 
-		if (k >= this.pointsCtr.length)
+		if (p >= this.pointsCtr.length)
 			return ;
 
 		// calculating the knot vector
-		let knot_vector = new Array(this.pointsCtr.length + k + 1);
-		for (i = 0; i < k + 1; ++i)
+		let knot_vector = new Array(this.pointsCtr.length + p + 1);
+		for (i = 0; i <= p; ++i)
 			knot_vector[i] = 0;
-		for (i = k + 1; i < this.pointsCtr.length; ++i)
-			knot_vector[i] = knot_vector[i - 1] + 1;
-		for (i = this.pointsCtr.length; i < knot_vector.length; ++i)
-			knot_vector[i] = knot_vector[this.pointsCtr.length - 1] + 1;
-		let t_max = knot_vector[knot_vector.length - 1];
+		for (i = p + 1; i <= this.pointsCtr.length - 1; ++i)
+			knot_vector[i] = i - p;
+		for (i = this.pointsCtr.length; i <= this.pointsCtr.length + p; ++i)
+			knot_vector[i] = this.pointsCtr.length - p;
+		let t_max = this.pointsCtr.length - p;
 
-		const N = this.countSplinePoints.value;
+		const N = Number(this.countSplinePoints.value);
 		this.pointsSpline = new Array(N);
 
 		// calculating the values of a parametric function in points
@@ -433,31 +426,28 @@ const Data = {
 		{
 			dt = (t_max - this.pointsCtr[0].t) / (N - 1);
 			t = this.pointsCtr[0].t;
-			for (j = 0; j < N; j++)
+			for (i = 0; i < N; i++)
 			{
 				let x = 0, y = 0;
-				let basis_func = new Array(k + 1);
-				i = findSpan(this.pointsCtr.length, k, t, knot_vector);
-				basisFuncs(i, t, k, knot_vector, basis_func);		
-				for (let l = 0; l < k + 1; l++)
+				let basis_func = new Array(p + 1);
+				span = findSpan(this.pointsCtr.length - 1, p, t, knot_vector);
+				basisFuncs(span, t, p, knot_vector, basis_func);		
+				for (let l = 0; l < p + 1; l++)
 				{
-					if (i - k + l < this.pointsCtr.length)
-					{
-						x += basis_func[l] * this.pointsCtr[i - k + l].x;
-						y += basis_func[l] * this.pointsCtr[i - k + l].y;
-					}
+						x += basis_func[l] * this.pointsCtr[span - p + l].x;
+						y += basis_func[l] * this.pointsCtr[span - p + l].y;
 				}
 				pt = new Point(x, y);
-				this.pointsSpline.push(pt);
+				this.pointsSpline[i] = pt;
 				t += dt;
 			}
 		}
 
 		// filling in an array for rendering
 		this.verticesSpline = new Float32Array(this.pointsSpline.length * 2);
-		for (j = 0; j < this.pointsSpline.length; j++) {
-			this.verticesSpline[j * 2] = this.pointsSpline[j].x;
-			this.verticesSpline[j * 2 + 1] = this.pointsSpline[j].y;
+		for (i = 0; i < this.pointsSpline.length; i++) {
+			this.verticesSpline[i * 2] = this.pointsSpline[i].x;
+			this.verticesSpline[i * 2 + 1] = this.pointsSpline[i].y;
 		}
 	}
 }
