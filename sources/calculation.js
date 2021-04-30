@@ -59,11 +59,8 @@ function main() {
 
 	const countSplinePoints = document.getElementById("countSplinePoints");
 	const splineOrder = document.getElementById("splineOrder");
-	const uniform = document.getElementById("uniform");
-	const chordal = document.getElementById("chordal");
-	const centripetal = document.getElementById("centripetal");
 
-	Data.init(gl, countSplinePoints, splineOrder, uniform, chordal, centripetal);
+	Data.init(gl, countSplinePoints, splineOrder);
 
 	// Register function (event handler) to be called on a mouse press
 	canvas.onclick = function (ev) { click(ev, canvas); };
@@ -83,9 +80,6 @@ function main() {
 	lineSpline.onclick = function () { Data.plotMode(1); };
 	countSplinePoints.onchange = function () { Data.plotMode(2); };
 	splineOrder.onchange = function () { Data.plotMode(2); };
-	uniform.onclick = function () { Data.plotMode(2); };
-	chordal.onclick = function () { Data.plotMode(2); };
-	centripetal.onclick = function () { Data.plotMode(2); };
 	controlPolygon.onclick = function () { Data.plotMode(3); };
 	visualizeSplineWithPoints.onclick = function () { Data.plotMode(4); };
 	visualizeSplineWithLines.onclick = function () { Data.plotMode(5); };
@@ -190,10 +184,7 @@ const Data = {
 	visualizeSplineWithLine: false,
 	countSplinePoints: null,
 	splineOrder: null,
-	uniform: null,
-	chordal: null,
-	centripetal: null,
-	init: function (gl, countSplinePoints, splineOrder, uniform, chordal, centripetal) {
+	init: function (gl, countSplinePoints, splineOrder) {
 		this.gl = gl;
 		// Create a buffer object
 		this.vertexBufferCtr = this.gl.createBuffer();
@@ -242,9 +233,6 @@ const Data = {
 
 		this.countSplinePoints = countSplinePoints;
 		this.splineOrder = splineOrder;
-		this.uniform = uniform;
-		this.chordal = chordal;
-		this.centripetal = centripetal;
 	},
 	setLeftButtonDown: function (value) {
 		this.leftButtonDown = value;
